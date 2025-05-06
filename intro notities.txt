@@ -1,0 +1,85 @@
+RIVM casus:
+	stikstof crisis
+	effect van akker op stikstof concentratie in lichamen water
+	herkenning van akkers
+	data: 
+		satalietfoto's, luchtfoto's
+		landkaarten
+
+	mogelijke modellen: 
+		neural network?
+		clustering?
+
+woning casus:
+	opknapping van oude gebouwen
+	data:
+		dronefoto's
+		satalietfoto's
+
+	mogelijke modellen:
+		clustering
+		decision tree? (kan complexer)
+
+C. elegans casus:
+	reproductie analyse van een organisme op basis van water qualiteit
+	populatie analyse
+	analyse van medische condities
+	classificatie van fysicale condities
+	data:
+		populaties in gecontroleerde instancies
+		videos van individuele organismen
+
+	mogelijke modellen:
+		???
+
+scantank casus:
+	audit of subsidiary companies
+
+	data: (dataset is er all)
+		papier documenten
+		
+	mogelijke modellen:
+		???
+
+nestkast casus:
+	plaatsing van nestkasten in woningbouw
+	
+	data:
+		woningschetsen
+		geen real world data
+		info over verschillende soorten vogels (of vleermuisen)
+
+	mogelijke modellen:
+		k-means?
+
+volkerwessels casus:
+	identificatie van hectometer paaltjes
+
+	data:
+		foto's van wegen
+		satalietfoto's 
+
+	mogelijke modellen:
+		object identification
+
+tygron casus:
+	processing van data over regio's
+	classificatie van tuinen 
+	data:
+		satalietfoto's
+		kaarten
+		
+	mogelijke modellen:
+		neural network?
+
+systemintegration casus:
+	vermindering van zwerfafval 
+	opdracht voor student onduidelijk?
+	auto classificatie van afval?
+	data:
+		info over elk individueel stuk afval 
+		
+	mogelijke modellen:
+		classificatie
+
+			
