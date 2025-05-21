@@ -1,2 +1,4 @@
 datasets
 .txt
+.pt
+.onnx
