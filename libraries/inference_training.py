@@ -15,7 +15,7 @@ from torchvision.ops.boxes import masks_to_boxes
 from torchvision.transforms import v2
 from torchvision.utils import draw_segmentation_masks, draw_bounding_boxes
 import utils
-from engine import train_one_epoch, evaluate
+from libraries.engine import train_one_epoch, evaluate
 
 
 # from torch.nn import Sequential,ModuleList
@@ -128,6 +128,7 @@ class Configuration:
 
         self.filePrefix = ""
         self.modelPrefix = "inference"
+        self.savePath = ""
         self.epochs = 20
         self.legendEntries = []
         self.imagePredicate = lambda f: str(f).endswith("image.png")
@@ -144,6 +145,9 @@ class Configuration:
 
     def setModelName(self, modelName: str):
         self._modelName = modelName
+
+    def setSavePath(self, savePath: str):
+        self.savePath = savePath
 
     def getPytorchModelFileName(self):
         return self.getModelName() + ".pt"
@@ -383,7 +387,8 @@ def trainModel(config: Configuration,
                testDataLoader=None,
                optimizer=None,
                lrSceduler=None,
-               evaluateModel: bool = True):
+               evaluateModel: bool = True,
+               epoch_save_interval=0):
 
     if trainingDataLoader is None:
         if trainingDataset is None:
@@ -442,6 +447,11 @@ def trainModel(config: Configuration,
         lrScheduler.step()
         # evaluate on the test dataset
         evaluate(model, testDataLoader, device=config.device)
+        if epoch_save_interval != 0:
+            if epoch % epoch_save_interval == 0:
+                saveModel(config, model, config.savePath + config.getPytorchModelFileName())
+                exportOnnxModel(config, model, True)
+
 
     if evaluateModel:
         model.eval()
@@ -627,21 +637,31 @@ def toNumpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 
-def exportOnnxModel(config: Configuration, model):
+def exportOnnxModel(config: Configuration, model, alternate_save_path=False):
     device = torch.device('cpu')
     onnx_input = createOnnxInput(config)
     model.to(device)
     model.eval()
 
     # Export the model
-    torch.onnx.export(model,                 # model being run
-                  onnx_input,                # model input (or a tuple for multiple inputs)
-                  config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
-                  export_params=True,        # store the trained parameter weights inside the model file
-                  opset_version=11,          # the ONNX version to export the model to
-                  do_constant_folding=True,  # whether to execute constant folding for optimization
-                  input_names = [config.tensorName],   # the model's input names
-                  output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+    if not alternate_save_path:
+        torch.onnx.export(model,                 # model being run
+                      onnx_input,                # model input (or a tuple for multiple inputs)
+                      config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+                      export_params=True,        # store the trained parameter weights inside the model file
+                      opset_version=11,          # the ONNX version to export the model to
+                      do_constant_folding=True,  # whether to execute constant folding for optimization
+                      input_names = [config.tensorName],   # the model's input names
+                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+    else:
+        torch.onnx.export(model,                 # model being run
+                      onnx_input,                # model input (or a tuple for multiple inputs)
+                      config.savePath + config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+                      export_params=True,        # store the trained parameter weights inside the model file
+                      opset_version=11,          # the ONNX version to export the model to
+                      do_constant_folding=True,  # whether to execute constant folding for optimization
+                      input_names = [config.tensorName],   # the model's input names
+                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
 
     model.to(config.device)
     model.eval()
