@@ -1,4 +1,6 @@
 datasets
+models
 .txt
 .pt
 .onnx
+notes/account_details.txt
