@@ -1,2 +1,10 @@
 datasets
 .txt
+/ModelResearch/OnderzoekDataSubset/
+/ModelResearch/Yolo/.ipynb_checkpoints/
+/ModelResearch/MaskRCNN/.ipynb_checkpoints/
+/ModelResearch/Yolo/OnderzoekDataSubsetYolo/Train/images
+/ModelResearch/Yolo/OnderzoekDataSubsetYolo/Train/labels
+/ModelResearch/Yolo/OnderzoekDataSubsetYolo/Val/images
+/ModelResearch/Yolo/OnderzoekDataSubsetYolo/Val/labels
+/ModelResearch/Yolo/runs

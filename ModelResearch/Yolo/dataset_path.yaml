@@ -1,0 +1,6 @@
+train: C:\Users\tiess\PycharmProjects\Tygron\ModelResearch\Yolo\OnderzoekDataSubsetYolo\Train
+val: C:\Users\tiess\PycharmProjects\Tygron\ModelResearch\Yolo\OnderzoekDataSubsetYolo\Val
+
+nc: 1
+
+names: ["parking_space"]
