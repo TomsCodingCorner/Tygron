@@ -1,0 +1,1 @@
+path = "0_image.png"
