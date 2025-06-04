@@ -1,5 +1,5 @@
 # Tygron
-Groep 3 Tygron DLP door Ties, Joel, Tom en Elijah
+Groep 3 Tygron DLP door Ties, Tom en Elijah
 
 # GitHub Workflow – Tygron Team
 
@@ -10,38 +10,28 @@ Groep 3 Tygron DLP door Ties, Joel, Tom en Elijah
 - `bugfix/...` → voor specifieke fouten.
 
 ## Nieuwe branch maken (iedereen MOET dit volgen)
-git fetch origin (Pakt alle branches)
-git checkout dev (Verlaat de main branch en ga naar de dev branch)
-git pull origin dev (Pak de meest recente versie)
-git checkout -b feature/NAAM_HIER (Maak nu je eigen branch aan IN de dev branch voor de specifieke feature die je gaat bouwen.)
+1. git fetch origin (Pakt alle branches)
+2. git checkout dev (Verlaat de main branch en ga naar de dev branch)
+3. git pull origin dev (Pak de meest recente versie)
+4. git checkout -b feature/NAAM_HIER (Maak nu je eigen branch aan IN de dev branch voor de specifieke feature die je gaat bouwen.)
 
 ## Commit regels
-❌ Niet doen: 
-update, nieuwe versie, shit gefixt
-
 ✅ Wel doen:
-
-feat: voegt login toe
-
-fix: repareert fout bij dataload
-
-docs: beschrijft workflow in README
+- Commit tekst: Geef een duidelijke beknopte uitleg weat je hebt gedaan binnen die commit
+- Commit met regelmaat!
+- feat: voegt login toe
+- fix: repareert fout bij dataload
+- docs: beschrijft workflow in README
 
 ## Werkwijze
-Maak een branch vanaf dev
-
-Codeer op je eigen branch
-
-Commit & push
-
-Maak een Pull Request naar dev
-
-Laat je code reviewen
-
-Merge na goedkeuringWerkwijze
+- Maak een branch vanaf dev
+- Codeer op je eigen branch als er conflicts kunnen komen door op dezelfde branche te werken
+- Commit & push
+- Maak een Pull Request naar dev
+- Laat je code reviewen
+- Merge na goedkeuring Werkwijze
 
 ## Voorbeeld pushen
-
 git status                      # Check of je op je eigen branch werkt, er moet staan feature/(jouw feature naam) NIET MAIN of DEV. 
 git add README.md               # Voeg toe wat je wil opslaan
 git commit -m "docs: beschrijft git workflow in README"
