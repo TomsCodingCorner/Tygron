@@ -1,0 +1,26 @@
+data punten:
+-test verschillende methodes op huidig model
+	-image flips
+	-color gradients
+	-image rotates
+
+-test model over geannoteerde datasets
+	-welke objecten worden niet gedetecteerd?
+	-wat wordt fout gedetecteerd?
+	-zijn er patronen te vinden in dit?
+
+-TEST: label objecten rondt de objecten
+
+-review oude datasets
+
+-meer rondes in training van model
+
+-meer variatie in objecten
+	-parkeerplaatsen met auto's
+	-parkeerplaatsen zonder auto's 
+	-verschillende gronden (grass, cement)
+	
+
+-tygron platform delayed run
+
+-vraag frank sneller
