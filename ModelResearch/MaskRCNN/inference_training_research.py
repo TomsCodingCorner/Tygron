@@ -722,3 +722,38 @@ def loadModel(config: Configuration, model, path: str = None):
     if path is None:
         path = config.getPytorchModelFileName()
     model.load_state_dict(torch.load(path, weights_only=True))
+
+
+def testInferenceWithIoU(config: Configuration,
+                         dataset: ImageDataset,
+                         model,
+                         imageNumber: int):
+    # Load image + ground truth
+    img, target = dataset[imageNumber]  # Returns transformed img and target
+    gt_masks = target["masks"]
+
+    model.eval()
+    with torch.no_grad():
+        img = img.to(config.device)
+        prediction = model([img])[0]  # dict with boxes, labels, scores, masks
+
+    # Filter predictions by score threshold
+    score_threshold = config.scoreThreshold
+    keep = prediction["scores"] > score_threshold
+
+    pred_masks = prediction["masks"][keep].squeeze(1).cpu()
+
+    gt_masks = gt_masks.bool().cpu()
+    pred_masks = pred_masks.bool()
+
+    ious = []
+    for gt_mask in gt_masks:
+        best_iou = 0.0
+        for pred_mask in pred_masks:
+            intersection = (gt_mask & pred_mask).sum().item()
+            union = (gt_mask | pred_mask).sum().item()
+            iou = intersection / union if union > 0 else 0.0
+            best_iou = max(best_iou, iou)
+        ious.append(best_iou)  # best IoU for this gt mask
+
+    return ious  # one IoU per gt object
