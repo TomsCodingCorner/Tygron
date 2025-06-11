@@ -1,3 +1,6 @@
+#Feature branching Git workflow
+
+
 # Tygron
 Groep 3 Tygron DLP door Ties, Tom en Elijah
 
@@ -32,7 +35,7 @@ Groep 3 Tygron DLP door Ties, Tom en Elijah
 - Merge na goedkeuring Werkwijze
 
 ## Voorbeeld pushen
-git status                      # Check of je op je eigen branch werkt, er moet staan feature/(jouw feature naam) NIET MAIN of DEV. 
-git add README.md               # Voeg toe wat je wil opslaan
-git commit -m "docs: beschrijft git workflow in README"
-git push -u origin feature/update-readme
+- git status                      # Check of je op je eigen branch werkt, er moet staan feature/(jouw feature naam) NIET MAIN of DEV. 
+- git add README.md               # Voeg toe wat je wil opslaan
+- git commit -m "docs: beschrijft git workflow in README"
+- git push -u origin feature/update-readme
