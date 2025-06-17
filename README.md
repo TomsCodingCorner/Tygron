@@ -14,7 +14,7 @@ dat automatisch priveparkeerplaatsen kan herkennen op basis van luchtfoto’s. D
 3. De juiste packages (Zie installeerguide)
 
 # Hoe installeer ik Miniconda:
-1. Ga naar de Miniconda-website:
+1. Ga naar de officiele Miniconda downloadpagina: https://www.anaconda.com/download/success
 2. Download het installatieprogramma dat overeenkomt met jouw besturingssysteem (Windows, macOS of Linux). 
 3. Voer het installatieprogramma uit, Dubbelklik op het gedownloade bestand om het installatieprogramma te starten. 
 4. Volg de instructies, Het installatieprogramma zal je door het installatieproces leiden. Je kiest een installatielocatie en voegt de conda paden toe aan je shell. 
