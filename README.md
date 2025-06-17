@@ -1,8 +1,8 @@
 # Tygron
-Het team bestaat uit: (Groep 3)
-• Ties Smid – Scrum Master en contactpersoon voor de Product Owner
-• Tom van der Kruijk – Verantwoordelijk voor backlogbeheer
-• Elijah Hofman – Leiding Back-endontwikkeling
+Het team van groep 3 bestaat uit:
+- Ties Smid – Scrum Master en contactpersoon voor de Product Owner
+- Tom van der Kruijk – Verantwoordelijk voor backlogbeheer
+- Elijah Hofman – Leiding Back-endontwikkeling
 
 # Inleiding van het project
 Het doel van dit project is het ontwikkelen van een Object Masking AI-model
@@ -30,16 +30,16 @@ dat automatisch priveparkeerplaatsen kan herkennen op basis van luchtfoto’s. D
 
 # Package installatie
 Check of conda geinstalleerd is door het volgende command te doen, dit zou: "conda 25.3.1" (Of een andere versie) moeten teruggeven:
-  conda --version
+- conda --version
 
 Als dit geintalleerd is, run deze command om een conda enviroment op te zetten:
-  conda create --name tygrongroep3 python=3.13
+- conda create --name tygrongroep3 python=3.13
 
 Activeer de enviroment:
-  conda activate tygrongroep3
+- conda activate tygrongroep3
 
 Zorg dat je met de terminal in de hoofdpaginafolder zit waar de enviroment.yaml inzit en download de packages uit de yml met:
-  conda env update -n tygrongroep3 --file enviroment.yaml
+- conda env update -n tygrongroep3 --file enviroment.yaml
 
 # Hoe moet de code uitgevoerd worden
 
