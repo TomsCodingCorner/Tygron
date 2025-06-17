@@ -9,7 +9,7 @@ Het doel van dit project is het ontwikkelen van een Object Masking AI-model
 dat automatisch priveparkeerplaatsen kan herkennen op basis van luchtfoto’s. Die uiteindelijk gebruikt zou worden door overheidsinstanties die momenteel niet beschikken over betrouwbare data over dergelijke parkeerplaatsen, wat beleidsvorming belemmert.
 
 # Benodigdheden:
-1. Conda 4.11+ of Miniconda (aanbevolen)
+1. Conda 22.10+ of Miniconda (aanbevolen)
 2. Python versie 3.10 of hoger
 3. De juiste packages (Zie installeerguide)
 
