@@ -132,6 +132,8 @@ class Configuration:
         self.MAX_CLASSES = 250
         self.autoLimitLabel = False
         self.isCrowd = False
+        self.savePath = ""
+        self.saveInterval = 0
 
         self.version = datetime.date.today().strftime("%Y%m%d")
 
@@ -139,10 +141,10 @@ class Configuration:
         self._modelName = modelName
 
     def getPytorchModelFileName(self):
-        return self.getModelName() + ".pt"
+        return self.savePath + self.getModelName() + ".pt"
 
     def getOnnxFileName(self):
-        return self.getModelName() + ".onnx"
+        return self.savePath + self.getModelName() + ".onnx"
 
     def getModelName(self):
         if hasattr(self, '_modelName'):
@@ -165,6 +167,9 @@ class Configuration:
     def setFilePrefix(self, prefix: str):
         self.filePrefix = prefix
 
+    def setSaveInterval(self, interval: int):
+        self.saveInterval = interval
+
     def setInputSizes(self,
                       inputWidth: int = 250,
                       inputHeight: int = 250):
@@ -182,6 +187,9 @@ class Configuration:
         if maxCellSizeM is not None:
             maxCellSizeM = self.cellSizeM
         self.maxCellSizeM = max(maxCellSizeM, self.cellSizeM)
+
+    def setSavePath(self, savePath: str):
+        self.savePath = savePath
 
     def getCellSizeCM(self):
         return str(int(self.cellSizeM * 100)) + "cm"
@@ -541,6 +549,8 @@ def trainModel(config: Configuration,
         lrScheduler.step()
         # evaluate on the test dataset
         evaluate(model, testDataLoader, device=config.device)
+        if config.saveInterval != 0 and epoch % config.saveInterval:
+            saveModel(config, model)
 
     if evaluateModel:
         model.eval()
@@ -735,7 +745,7 @@ def toNumpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 
-def exportOnnxModel(config: Configuration, model, model_path=""):
+def exportOnnxModel(config: Configuration, model):
     device = torch.device('cpu')
     onnx_input = createOnnxInput(config)
     model.to(device)
@@ -744,7 +754,7 @@ def exportOnnxModel(config: Configuration, model, model_path=""):
     # Export the model
     torch.onnx.export(model,  # model being run
                       onnx_input,  # model input (or a tuple for multiple inputs)
-                      model_path + config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+                      config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
                       export_params=True,  # store the trained parameter weights inside the model file
                       opset_version=11,  # the ONNX version to export the model to
                       do_constant_folding=True,  # whether to execute constant folding for optimization
@@ -828,11 +838,11 @@ def addMeta(onnx_model, key, value):
     meta.value = value
 
 
-def saveModel(config: Configuration, model, path: str = None):
+def saveModel(config: Configuration, model, epoch: int = 0, path: str = None):
     if path is None:
         path = config.getPytorchModelFileName()
 
-    torch.save(model.state_dict(), path)
+    torch.save(model.state_dict(), path + "_epoch_" + str(epoch))
 
 
 def loadModel(config: Configuration, model, path: str = None):
