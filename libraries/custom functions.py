@@ -12,7 +12,7 @@ import random
 
 
 def createModel(trainDirectory: str, testDirectory: str, modelName: str, epochs: int, labels: list[str],
-                augment_data: bool, model_path: str, model_description="default"):
+                augment_data: bool, model_path: str, maskdata=[0.2, 0.3, 0.5],model_description="default"):
     """
     :param trainDirectory: path naar training dataset
     :param testDirectory: path naar testing dataset
@@ -21,6 +21,7 @@ def createModel(trainDirectory: str, testDirectory: str, modelName: str, epochs:
     :param labels: list van labels, geef normaal ["parkeerplaatsen"] als er geen andere objecten zijn
     :param augment_data: bepaald of er image transforms gedaan worden, nog niet getest
     :param model_path: path naar save locatie van model
+    :param metadata: list van floats
     :param model_description: beschrijft het model in de ONNX als het gesaved is
     :return:
     """
@@ -43,9 +44,9 @@ def createModel(trainDirectory: str, testDirectory: str, modelName: str, epochs:
         config.addLegendEntry(label, i, ["#" + ''.join([random.choice('ABCDEF0123456789') for i in range(6)])])
         i += 1
 
-    config.setOnnxMetaData(scoreThreshold=0.2,
-                           maskThreshold=0.3,
-                           strideFraction=0.5)
+    config.setOnnxMetaData(scoreThreshold=maskdata[0],
+                           maskThreshold=maskdata[1],
+                           strideFraction=maskdata[2])
 
     config.setTensorInfo(tensorName='input_A:RGB_normalized', batchAmount=1)
     if augment_data:
