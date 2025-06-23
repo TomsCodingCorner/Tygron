@@ -35,11 +35,11 @@ Check of conda geinstalleerd is door het volgende command te doen, dit zou: "con
 Als dit geintalleerd is, run deze command om een conda enviroment op te zetten:
 - conda create --name tygrongroep3 python=3.13
 
-Activeer de enviroment:
+Open een nieuw terminal en activeer de conda enviroment:
 - conda activate tygrongroep3
 
 Zorg dat je met de terminal in de hoofdpaginafolder zit waar de enviroment.yaml inzit en download de packages uit de yml met:
-- conda env update -n tygrongroep3 --file enviroment.yaml
+- conda env update -n tygrongroep3 --file environment.yaml
 
 # Hoe moet de code uitgevoerd worden
 
