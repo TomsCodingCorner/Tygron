@@ -56,6 +56,7 @@ Inloghandleiding - https://support.tygron.com/wiki/Log_in
 
 Maak een nieuw project aan met behulp van de wizard:
 Nieuwe projectwizard - https://support.tygron.com/wiki/New_Project_Wizard
+
 ![file-U1jpjUX3pKGi5Lc4J3USBu](https://github.com/user-attachments/assets/4260fb9a-1b0f-4b59-bc24-10db21bc6990)
 
 2. Toevoegen van overlays
@@ -79,6 +80,7 @@ Open de Combinatie-overlay en ga naar het tabblad Input.
 Stel onder Grid A de overlay “Oorspronkelijke Satelliet” in.
 
 Klik onderin op “Select more Attributes or Grids” en kies daar het attribuut “Private_Yard” als Attribute A.
+
 ![image](https://github.com/user-attachments/assets/bf6cffe8-09b8-4944-a743-96d44d87b624)
 
 5. Formule toevoegen
@@ -86,6 +88,7 @@ Ga naar het tabblad General van de combinatie-overlay.
 
 Voeg onder Formula de volgende formule toe:
 IF(GT(@A, 0), A, -2147483648)
+
 ![file-J5S1EUGwNxRGQjSMcAMFh5](https://github.com/user-attachments/assets/12b38b91-aacb-4886-b4a1-17fea07f6723)
 
 6. Berekening uitvoeren
