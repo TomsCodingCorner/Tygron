@@ -14,8 +14,8 @@ import torch.nn as nn
 from torchvision.ops.boxes import masks_to_boxes
 from torchvision.transforms import v2
 from torchvision.utils import draw_segmentation_masks, draw_bounding_boxes
-import libraries.utils as utils
-from libraries.engine import train_one_epoch, evaluate
+import Libraries.utils as utils
+from Libraries.engine import train_one_epoch, evaluate
 
 
 # from torch.nn import Sequential,ModuleList
@@ -65,7 +65,6 @@ def showBBoxes(image, masks):
 
 
 def show(imgs, cols=3):
-
     rows = len(imgs) // cols
     if len(imgs) % cols > 0:
         rows += 1
@@ -753,3 +752,71 @@ def loadModel(config: Configuration, model, path: str = None):
     if path is None:
         path = config.getPytorchModelFileName()
     model.load_state_dict(torch.load(path, weights_only=True))
+
+
+def testInferenceWithIoU(config: Configuration,
+                         dataset: ImageDataset,
+                         model,
+                         imageNumber: int):
+    """
+    Evaluate the model's instance segmentation performance on a single image by computing
+    the Intersection over Union (IoU) between predicted masks and ground truth masks.
+
+    Parameters:
+    -----------
+    config : Configuration
+        Configuration object containing parameters such as device (CPU/GPU) and scoreThreshold
+        used to filter predictions.
+    dataset : ImageDataset
+        Dataset object that provides the image and corresponding ground truth annotations
+        (including masks) when indexed.
+    model : torch.nn.Module
+        The trained instance segmentation model to be evaluated. The model should return
+        predictions with masks, boxes, labels, and scores.
+    imageNumber : int
+        Index of the image within the dataset to perform inference and evaluation on.
+
+    Returns:
+    --------
+    List[float]
+        A list of IoU scores, one for each ground truth mask in the image. Each IoU represents
+        the highest overlap between the given ground truth mask and any predicted mask that
+        passes the score threshold.
+
+    Notes:
+    ------
+    - The function sets the model to evaluation mode and disables gradient computation.
+    - Predictions are filtered based on the scoreThreshold defined in the config.
+    - IoU is computed as the ratio of the intersection to the union of the ground truth and
+      predicted masks.
+    - If no predicted mask overlaps with a ground truth mask, the IoU for that mask is 0.0.
+    """
+    # Load image + ground truth
+    img, target = dataset[imageNumber]  # Returns transformed img and target
+    gt_masks = target["masks"]
+
+    model.eval()
+    with torch.no_grad():
+        img = img.to(config.device)
+        prediction = model([img])[0]  # dict with boxes, labels, scores, masks
+
+    # Filter predictions by score threshold
+    score_threshold = config.scoreThreshold
+    keep = prediction["scores"] > score_threshold
+
+    pred_masks = prediction["masks"][keep].squeeze(1).cpu()
+
+    gt_masks = gt_masks.bool().cpu()
+    pred_masks = pred_masks.bool()
+
+    ious = []
+    for gt_mask in gt_masks:
+        best_iou = 0.0
+        for pred_mask in pred_masks:
+            intersection = (gt_mask & pred_mask).sum().item()
+            union = (gt_mask | pred_mask).sum().item()
+            iou = intersection / union if union > 0 else 0.0
+            best_iou = max(best_iou, iou)
+        ious.append(best_iou)  # best IoU for this gt mask
+
+    return ious  # one IoU per gt object
