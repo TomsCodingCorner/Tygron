@@ -20,6 +20,7 @@ dependencies:
   - jedi=0.19.2=pyhd8ed1ab_1
   - jupyter_client=8.6.3=pyhd8ed1ab_1
   - jupyter_core=5.8.1=pyh5737063_0
+  - notebook=7.2.0
   - libffi=3.4.4=hd77b12b_1
   - libmpdec=4.0.0=h827c3e9_0
   - libsodium=1.0.18=h8d14728_1
