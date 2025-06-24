@@ -141,7 +141,7 @@ class Configuration:
         self._modelName = modelName
 
     def getPytorchModelFileName(self):
-        return self.savePath + self.getModelName() + ".pt"
+        return self.savePath + self.getModelName()
 
     def getOnnxFileName(self):
         return self.savePath + self.getModelName() + ".onnx"
@@ -531,10 +531,10 @@ def trainModel(config: Configuration,
             gamma=0.1
         )
 
-    hasModel = os.path.exists(config.getPytorchModelFileName())
+    hasModel = os.path.exists(config.getPytorchModelFileName() + ".pt")
 
     if hasModel and config.reuseModel:
-        checkpoint = torch.load(config.getPytorchModelFileName(),
+        checkpoint = torch.load(config.getPytorchModelFileName() + ".pt",
                                 weights_only=False)
 
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -549,8 +549,8 @@ def trainModel(config: Configuration,
         lrScheduler.step()
         # evaluate on the test dataset
         evaluate(model, testDataLoader, device=config.device)
-        if config.saveInterval != 0 and epoch % config.saveInterval:
-            saveModel(config, model)
+        if config.saveInterval != 0 and epoch % config.saveInterval == 0:
+            saveModel(config, model, epoch=epoch)
 
     if evaluateModel:
         model.eval()
@@ -842,10 +842,10 @@ def saveModel(config: Configuration, model, epoch: int = 0, path: str = None):
     if path is None:
         path = config.getPytorchModelFileName()
 
-    torch.save(model.state_dict(), path + "_epoch_" + str(epoch))
+    torch.save(model.state_dict(), path + "_epoch_" + str(epoch) + ".pt")
 
 
 def loadModel(config: Configuration, model, path: str = None):
     if path is None:
-        path = config.getPytorchModelFileName()
+        path = config.getPytorchModelFileName() + ".pt"
     model.load_state_dict(torch.load(path, weights_only=True))
