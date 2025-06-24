@@ -1,5 +1,5 @@
-train: C:\Users\tiess\PycharmProjects\Tygron\ModelResearch\Yolo\OnderzoekDataSubsetYolo\Train
-val: C:\Users\tiess\PycharmProjects\Tygron\ModelResearch\Yolo\OnderzoekDataSubsetYolo\Val
+train: OnderzoekDataSubsetYolo/Train
+val: OnderzoekDataSubsetYolo/Val
 
 nc: 1
 
