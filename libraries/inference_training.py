@@ -91,9 +91,9 @@ def createTransforms(train: bool):
     transforms = []
 
     # Disable, random is evil, and colorjitter only on input images
-    # if train:
-    # transforms.append(v2.RandomHorizontalFlip(0.5))
-    # transforms.append(v2.ColorJitter(brightness=.5, saturation=0.05))
+    if train:
+        #transforms.append(v2.RandomHorizontalFlip(0.5))
+        transforms.append(v2.ColorJitter(brightness=0.2, saturation=0.05, contrast=0.1, hue=0.15))
 
     transforms.append(v2.ToDtype(torch.float, scale=True))
     transforms.append(v2.ToPureTensor())

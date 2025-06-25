@@ -9,6 +9,8 @@ datasets
 /ModelResearch/Yolo/OnderzoekDataSubsetYolo/Val/labels
 /ModelResearch/Yolo/runs
 models
+notes
+custom functions/test_image
 .pt
 .onnx
 notes/account_details.txt
