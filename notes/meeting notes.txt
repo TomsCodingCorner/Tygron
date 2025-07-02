@@ -1,3 +1,0 @@
-Mogelijke errors in image transformation:
-	verschillende crops van masks en originele images
-	color change op mask 
