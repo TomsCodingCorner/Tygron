@@ -17,19 +17,37 @@ initCudaEnvironment(numCudaDevices=1,
 
 def createModel(trainDirectory: str, testDirectory: str, modelName: str, epochs: int, labels: list[str], augment_data: bool, model_path: str, save_interval=0, maskdata=None, model_description="default"):
     """
-    Train a new Mask R-CNN model
-    
-    :param trainDirectory: path naar training dataset
-    :param testDirectory: path naar testing dataset
-    :param modelName: naam van model 
-    :param epochs: hoeveelheid epochs
-    :param labels: list van labels, geef normaal ["parkeerplaatsen"] als er geen andere objecten zijn
-    :param augment_data: bepaald of er image transforms gedaan worden
-    :param model_path: path naar save locatie van model
-    :param save_interval: save model every N epochs (0 = only at end)
-    :param maskdata: [score_threshold, mask_threshold, stride_fraction]
-    :param model_description: beschrijft het model in de ONNX als het gesaved is
-    :return: trained model and configuration
+    Train a new Mask R-CNN instance segmentation model.
+
+    Parameters:
+    -----------
+    trainDirectory : str
+        Path to the training dataset directory.
+    testDirectory : str
+        Path to the testing dataset directory.
+    modelName : str
+        Name to assign to the trained model.
+    epochs : int
+        Number of training epochs.
+    labels : list[str]
+        List of label names for the classes. Include ["parkeerplaatsen"] if only one class is present.
+    augment_data : bool
+        Whether to apply data augmentation (image transforms) during training.
+    model_path : str
+        Directory path where the trained model will be saved.
+    save_interval : int, optional
+        Interval (in epochs) to save the model during training; 0 means save only at the end. Default is 0.
+    maskdata : list[float], optional
+        List of three floats: [scoreThreshold, maskThreshold, strideFraction] for ONNX metadata. Defaults to [0.2, 0.3, 0.5].
+    model_description : str, optional
+        Description of the model to embed in ONNX metadata. Default is "default".
+
+    Returns:
+    --------
+    model : torch.nn.Module
+        The trained PyTorch model in evaluation mode.
+    config : Configuration
+        The configuration object used for training.
     """
     if maskdata is None:
         maskdata = [0.2, 0.3, 0.5]
@@ -101,11 +119,21 @@ def createModel(trainDirectory: str, testDirectory: str, modelName: str, epochs:
 
 def load_model(path: str, config=None):
     """
-    Load an existing trained model
-    
-    :param path: path naar model save location 
-    :param config: config als het eerder is ingesteld
-    :return: loaded model and configuration
+    Load a trained Mask R-CNN model from disk.
+
+    Parameters:
+    -----------
+    path : str
+        File path to the saved model.
+    config : Configuration, optional
+        Configuration object if previously created; if None, a new default Configuration will be created.
+
+    Returns:
+    --------
+    model : torch.nn.Module
+        Loaded PyTorch model ready for inference.
+    config : Configuration
+        Configuration object associated with the loaded model.
     """
     if not config:
         config = Configuration()
@@ -117,7 +145,12 @@ def load_model(path: str, config=None):
 
 def load_default_config():
     """
-    Load default configuration settings
+    Create and return a default Configuration object with standard parameters set.
+
+    Returns:
+    --------
+    config : Configuration
+        Configuration object initialized with default values for model and training.
     """
     config = Configuration()
     config.setIsCrowd(False)
