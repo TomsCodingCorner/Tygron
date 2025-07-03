@@ -1,6 +1,9 @@
 import os
+
+import logging
 import onnx
 import torch
+from pathlib import Path
 import matplotlib.pyplot as pyplot
 import numpy as np
 import torchvision
@@ -14,15 +17,17 @@ import torch.nn as nn
 from torchvision.ops.boxes import masks_to_boxes
 from torchvision.transforms import v2
 from torchvision.utils import draw_segmentation_masks, draw_bounding_boxes
+import datetime
 import Libraries.utils as utils
 from Libraries.engine import train_one_epoch, evaluate
-
 
 # from torch.nn import Sequential,ModuleList
 # from torchvision.models.detection import maskrcnn_resnet50_fpn
 # from torchvision.models.detection.rpn import AnchorGenerator
 # from torchvision.ops import misc as misc_nn_ops
 
+
+logger = logging.getLogger(__name__)
 
 def initCudaEnvironment(numCudaDevices: int = 1,
                         visibleCudaDevices: str = "0",
@@ -65,47 +70,32 @@ def showBBoxes(image, masks):
 
 
 def show(imgs, cols=3):
-    rows = len(imgs) // cols
+    rows = len(imgs) // cols;
     if len(imgs) % cols > 0:
         rows += 1
 
-    pyplot.figure(figsize=(32, 16))
-
     if not isinstance(imgs, list):
         imgs = [imgs]
-    fig, axs = pyplot.subplots(nrows=rows, ncols=cols,
-                               squeeze=False, figsize=(32, 16))
+
+    fig, axs = pyplot.subplots(nrows=rows, ncols=cols, squeeze=False, layout='compressed',
+                               figsize=(100, 100))
 
     for i, img in enumerate(imgs):
         img = img.detach()
         img = v2.functional.to_pil_image(img)
-        axs[i//cols, i % cols].imshow(np.asarray(img))
-        axs[i//cols, i % cols].set(xticklabels=[], yticklabels=[], 
-                                   xticks=[], yticks=[])
-
-
-def getLabels(filePrefix, imageNumber):
-    return getLabelList(filePrefix+imageNumber+"_labels.txt")
-
-
-def getLabelList(path):
-
-    lines = open(path, "r").read().splitlines()
-    result = []
-    for line in lines:
-        for value in line.split():
-            result.append(int(value))
-
-    return result
+        axs[i // cols, i % cols].imshow(np.asarray(img))
+        axs[i // cols, i % cols].set(xticklabels=[], yticklabels=[],
+                                     xticks=[], yticks=[])
 
 
 def createTransforms(train: bool):
     transforms = []
 
     # Disable, random is evil, and colorjitter only on input images
-    # if train:
-        # transforms.append(v2.RandomHorizontalFlip(0.5))
-        # transforms.append(v2.ColorJitter(brightness=.5, saturation=0.05))
+    if train:
+        #transforms.append(v2.RandomHorizontalFlip(0.5))
+        transforms.append(v2.ColorJitter(brightness=0.2, saturation=0.05, contrast=0.1, hue=0.15))
+
 
     transforms.append(v2.ToDtype(torch.float, scale=True))
     transforms.append(v2.ToPureTensor())
@@ -127,7 +117,6 @@ class Configuration:
 
         self.filePrefix = ""
         self.modelPrefix = "inference"
-        self.savePath = ""
         self.epochs = 20
         self.legendEntries = []
         self.imagePredicate = lambda f: str(f).endswith("image.png")
@@ -137,33 +126,41 @@ class Configuration:
 
         self.inputWidth = 250
         self.inputHeight = 250
-        self.numClasses = 1+1
+        self.numClasses = 1 + 1
         self.cellSizeM = 0.25
         self.bboxPerImage = 250
         self.inferenceMode = 1
+        self.MAX_ERROR_COUNT = 10
+        self.MAX_CLASSES = 250
+        self.autoLimitLabel = False
+        self.isCrowd = False
+        self.savePath = ""
+        self.saveInterval = 0
+
+        self.version = datetime.date.today().strftime("%Y%m%d")
+
 
     def setModelName(self, modelName: str):
         self._modelName = modelName
 
-    def setSavePath(self, savePath: str):
-        self.savePath = savePath
-
     def getPytorchModelFileName(self):
-        return self.getModelName() + ".pt"
+        return self.savePath + self.getModelName()
 
     def getOnnxFileName(self):
-        return self.getModelName() + ".onnx"
+        return self.savePath + self.getModelName() + ".onnx"
+
 
     def getModelName(self):
         if hasattr(self, '_modelName'):
             return self._modelName
 
-        modelname = self.modelPrefix + "_" + str( self.numClasses-1) + "c_" + self.getCellSizeCM() + "_" + str(self.epochs) + "e_" + str(self.bboxPerImage) +"_maxgt"
+        modelname = self.modelPrefix + "_" + str(self.numClasses - 1) + "c_" + self.getCellSizeCM() + "_" + str(
+            self.epochs) + "e_" + str(self.bboxPerImage) + "_maxgt"
         return modelname
-    
+
     def setDatasetPaths(self, trainPath: str, testPath: str):
-        self.trainPath = trainPath
-        self.testPath = testPath
+        self.trainPath = Path(trainPath)
+        self.testPath = Path(testPath)
 
     def getTrainPath(self):
         return self.trainPath
@@ -173,6 +170,9 @@ class Configuration:
 
     def setFilePrefix(self, prefix: str):
         self.filePrefix = prefix
+
+    def setSaveInterval(self, interval: int):
+        self.saveInterval = interval
 
     def setInputSizes(self,
                       inputWidth: int = 250,
@@ -192,21 +192,30 @@ class Configuration:
             maxCellSizeM = self.cellSizeM
         self.maxCellSizeM = max(maxCellSizeM, self.cellSizeM)
 
-    def getCellSizeCM(self):
-        return str(int(self.cellSizeM*100)) + "cm"
+    def setSavePath(self, savePath: str):
+        self.savePath = savePath
 
-    def setVersion(self, version):
+    def getCellSizeCM(self):
+        return str(int(self.cellSizeM * 100)) + "cm"
+
+    def setVersion(self, version: int):
         self.version = str(version)
 
-    def setEpochs(self, epochs):
+    def setEpochs(self, epochs: int):
         self.epochs = int(epochs)
+
+    def setAutoLimitLabel(self, autoLimit: bool):
+        self.autoLimitLabel = autoLimit
+
+    def setIsCrowd(self, isCrowd: bool):
+        self.isCrowd = isCrowd
 
     def setTensorInfo(self, tensorName: str = "input_A:RGB_normalized",
                       batchAmount: int = 1):
         self.tensorName = str(tensorName)
         self.batchAmount = int(batchAmount)
 
-    def setModelInfo(self, 
+    def setModelInfo(self,
                      channels: int = 3,
                      numClasses: int = 2,
                      bboxOverlap: bool = True,
@@ -241,44 +250,43 @@ class Configuration:
         self.maskThreshold = maskThreshold
         self.strideFraction = strideFraction
 
-    def getFiles(self, train: bool = True):
-
-        path = self.getTrainPath() if train else self.getTestPath()
-        files = listFilesRecursive(path)
-        return sorted(files, key=lambda f: f.path)
-
-
+        
 class ImageDataset(torch.utils.data.Dataset):
     def __init__(self, configuration: Configuration,
-                 isTraining: bool,
-                 transforms):
-        self.configuration = configuration
+                 isTraining: bool = True,
+                 transforms=None, imageTransforms=None):
+
+        self.config = configuration
         self.transforms = transforms
-        files = configuration.getFiles(isTraining)
-        self.images = [f.path for f in files if configuration.imagePredicate(f.path)]
-        self.masks = [f.path for f in files if configuration.maskPredicate(f.path)]
-        self.labels = [f.path for f in files if configuration.labelPredicate(f.path)]
+        self.imageTransforms = imageTransforms
+        self.isTraining = isTraining
+        self.images = []
+        self.masks = []
+        self.labels = []
 
-    def validateFiles(self, printFeedback: bool = False):
-        valid = True
-        for i in range(0, self.__len__()):
-            # get image index
-            imageName = self.images[i]
-            index = imageName.split("_")[1]
+        try:
+            files = self.getFiles()
+            self.images = [f.path for f in files if configuration.imagePredicate(f.path)]
+            self.masks = [f.path for f in files if configuration.maskPredicate(f.path)]
+            self.labels = [f.path for f in files if configuration.labelPredicate(f.path)]
+        except FileNotFoundError:
+            logger.warning("The datasets directory does not exist: " + str(self.getDirectory()))
+            logger.warning("Please adjust the configured dataset directory in the configuration file!")
 
-            maskIndex = self.masks[i].split("_")[1]
-            if index != maskIndex:
-                valid = False
-                if printFeedback:
-                    print("mask is missing for image " + self.images[i])
+    def getDirectory(self):
+        return self.config.getTrainPath() if self.isTraining else self.config.getTestPath()
 
-            labelIndex = self.labels[i].split("_")[1]
-            if index != labelIndex:
-                valid = False
-                if printFeedback:
-                    print("labels are missing for image " + self.images[i])
+    def getFiles(self):
+        files = listFilesRecursive(self.getDirectory(), files=[])
+        return sorted(files, key=lambda f: f.path)
 
-        return valid
+    def getAssetNumber(self, text: str):
+        prefix = self.config.filePrefix
+        if len(prefix) > 0 and text.startswith(prefix):
+            text = text[:len(prefix)]
+
+        return text.split("_")[0]
+
 
     def getImage(self, idx):
         return read_image(self.images[idx], mode=ImageReadMode.RGB)[:3]
@@ -289,11 +297,28 @@ class ImageDataset(torch.utils.data.Dataset):
     def getMask(self, idx):
         return read_image(self.masks[idx], mode=ImageReadMode.GRAY)[0]
 
-    def getLabelList(self, idx):
-        return getLabelList(self.getLabels(idx))
-
     def getLabels(self, idx):
-        return self.labels[idx]
+
+        lines = open(self.labels[idx], "r").read().splitlines()
+        result = []
+
+        for line in lines:
+            for value in line.split():
+
+                intValue = int(value)
+                if self.config.autoLimitLabel:
+                    intValue = min(intValue, self.config.numClasses - 1)
+
+                result.append(intValue)
+        return result
+
+    def getMaxLabel(self):
+        maxLabel = 0
+        for i in range(self.__len__()):
+            if len(self.getLabels(i)) > 0:
+                maxLabel = max(maxLabel, max(self.getLabels(i)))
+        return maxLabel
+
 
     def __getitem__(self, idx):
         # load images and masks
@@ -301,7 +326,7 @@ class ImageDataset(torch.utils.data.Dataset):
         mask = self.getMask(idx)
 
         for i in range(0, len(imgs)):
-            imgs[i] = v2.functional.convert_image_dtype(imgs[i], 
+            imgs[i] = v2.functional.convert_image_dtype(imgs[i],
                                                         dtype=torch.float)
 
         mask = v2.functional.convert_image_dtype(mask, dtype=torch.float)
@@ -320,14 +345,16 @@ class ImageDataset(torch.utils.data.Dataset):
         # get bounding box coordinates for each mask
         boxes = masks_to_boxes(masks)
 
-        labels = self.getLabelList(idx)
+        labels = self.getLabels(idx)
+
         labels = torch.as_tensor(labels, dtype=torch.int64)
 
         boxArea = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
         area = torch.as_tensor(boxArea, dtype=torch.int64)
 
         # suppose all instances are crowd
-        iscrowd = torch.ones(num_objs, dtype=torch.int64)
+        iscrowd = torch.ones(num_objs, dtype=torch.int64) if self.config.isCrowd else torch.zeros(num_objs,
+                                                                                                  dtype=torch.int64)
 
         # Wrap sample and targets into torchvision tv_tensors:
         for i in range(0, len(imgs)):
@@ -339,6 +366,10 @@ class ImageDataset(torch.utils.data.Dataset):
         target["boxes"] = tv_tensors.BoundingBoxes(boxes, format="XYXY",
                                                    canvas_size=v2.functional.get_size(imgs[0]))
         target["masks"] = tensorMasks
+
+        if self.imageTransforms is not None:
+            for i in range(0, len(imgs)):
+                imgs[i] = self.imageTransforms(imgs[i])
 
         if self.transforms is not None:
             for i in range(0, len(imgs)):
@@ -358,6 +389,80 @@ class ImageDataset(torch.utils.data.Dataset):
     def __len__(self):
         return min(len(self.images), len(self.masks), len(self.labels))
 
+    def getName(self):
+        return "Training dataset" if self.isTraining else "Test dataset"
+
+    # get transforms applied to both image and target (masks etc)
+    def getTransforms(self):
+        return self.transforms
+
+    # get transforms only applied to images (not masks)
+    def getImageTransforms(self):
+        return self.imageTransforms
+
+    # set transforms applied to both image and target (masks etc)
+    def setTransforms(self, transforms):
+        self.transforms = transforms
+
+    # set transforms only applied to images (not masks)
+    def setImageTransforms(self, imageTransforms):
+        self.imageTransforms = imageTransforms
+
+    def validate(self):
+
+        if self.__len__() <= 0:
+            logger.warning("No files were found in the " + self.getName())
+            return False
+
+        validFiles = self.validateFiles()
+        if validFiles:
+            logger.info("File check passed for " + self.getName())
+
+        validLabels = self.validateLabels()
+        if validLabels:
+            logger.info("Validation check passed for " + self.getName())
+
+        return validFiles and validLabels
+
+    def validateFiles(self):
+        errorCount = 0
+        for i in range(0, self.__len__()):
+
+            index = self.getAssetNumber(self.images[i])
+            maskIndex = self.getAssetNumber(self.masks[i])
+            if index != maskIndex:
+                errorCount += 1
+                if errorCount < self.config.MAX_ERROR_COUNT:
+                    logger.warning("mask is missing for image " + self.images[i])
+
+            labelIndex = self.getAssetNumber(self.labels[i])
+            if index != labelIndex:
+                errorCount += 1
+                if errorCount < self.config.MAX_ERROR_COUNT:
+                    logger.warning("labels are missing for image " + self.images[i])
+
+        return errorCount == 0
+
+    def validateLabels(self):
+
+        maxLabel = self.getMaxLabel()
+        valid = maxLabel <= self.config.numClasses
+
+        if not valid:
+            logger.warning("More classes found than expected: " +
+                           str(maxLabel) + " vs " +
+                           str(self.config.numClasses))
+
+            if maxLabel <= self.config.MAX_CLASSES:
+                logger.warning("Please adjust the Configuration parameter numClasses to: " + str(maxLabel))
+                logger.warning("Or set the autoLimitLabel option of Configuration to True")
+
+            else:
+                logger.warning("More classes are defined in the label files than the trained model can handle.")
+                logger.warning("Please set the autoLimitLabel option of Configuration to True")
+
+        return valid
+
 
 def listFilesRecursive(path, files=[]):
 
@@ -371,9 +476,8 @@ def listFilesRecursive(path, files=[]):
 
 
 def createSGDOptimizer(model):
-
     params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params,    lr=0.005,
+    optimizer = torch.optim.SGD(params, lr=0.005,
                                 momentum=0.9, weight_decay=0.0005)
     return optimizer
 
@@ -386,13 +490,16 @@ def trainModel(config: Configuration,
                testDataLoader=None,
                optimizer=None,
                lrSceduler=None,
-               evaluateModel: bool = True,
-               epoch_save_interval=0):
-
+               evaluateModel: bool = True):
     if trainingDataLoader is None:
         if trainingDataset is None:
-            print("Please provide a training dataset or dataset loader")
+            logger.warning("Please provide a training dataset or dataset loader")
             return
+
+        elif not trainingDataset.validate():
+            logger.warning("Training dataset is invalid, please inspect the logs.")
+            return
+          
         else:
             trainingDataLoader = torch.utils.data.DataLoader(
                 trainingDataset,
@@ -403,8 +510,12 @@ def trainModel(config: Configuration,
 
     if testDataLoader is None:
         if testDataset is None:
-            print("Please provide a test dataset or dataset loader")
+            logger.warning("Please provide a test dataset or dataset loader")
             return
+        elif not testDataset.validate():
+            logger.warning("Test dataset is invalid, please inspect the logs.")
+            return
+
         else:
             testDataLoader = torch.utils.data.DataLoader(
                 testDataset,
@@ -428,10 +539,10 @@ def trainModel(config: Configuration,
             gamma=0.1
         )
 
-    hasModel = os.path.exists(config.getPytorchModelFileName())
+    hasModel = os.path.exists(config.getPytorchModelFileName() + ".pt")
 
     if hasModel and config.reuseModel:
-        checkpoint = torch.load(config.getPytorchModelFileName(),
+        checkpoint = torch.load(config.getPytorchModelFileName() + ".pt",
                                 weights_only=False)
 
         model.load_state_dict(checkpoint['model_state_dict'])
@@ -440,17 +551,14 @@ def trainModel(config: Configuration,
 
     for epoch in range(config.epochs):
         # train for one epoch, printing every 10 iterations
-        train_one_epoch(model, optimizer, trainingDataLoader, config.device, 
+        train_one_epoch(model, optimizer, trainingDataLoader, config.device,
                         epoch, print_freq=10)
         # update the learning rate
         lrScheduler.step()
         # evaluate on the test dataset
         evaluate(model, testDataLoader, device=config.device)
-        if epoch_save_interval != 0:
-            if epoch % epoch_save_interval == 0:
-                saveModel(config, model, config.savePath + config.getPytorchModelFileName())
-                exportOnnxModel(config, model, True)
-
+        if config.saveInterval != 0 and epoch % config.saveInterval == 0:
+            saveModel(config, model, epoch=epoch)
 
     if evaluateModel:
         model.eval()
@@ -459,12 +567,12 @@ def trainModel(config: Configuration,
 
 
 def createModelInstance(config: Configuration):
-
     # load an instance segmentation model pre-trained on COCO
-    model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT", 
+    model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights="DEFAULT",
                                                                box_detections_per_img=config.bboxPerImage)
 
-    print("Detections per image " + str(model.roi_heads.detections_per_img))
+    logger.info("Detections per image " + str(model.roi_heads.detections_per_img))
+
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
 
@@ -473,7 +581,7 @@ def createModelInstance(config: Configuration):
 
     # now get the number of input features for the mask classifier
     in_features_mask = model.roi_heads.mask_predictor.conv5_mask.in_channels
-    print("in features mask: " + str(in_features_mask))
+    logger.info("in features mask: " + str(in_features_mask))
 
     hidden_layer = 256
     # and replace the mask predictor with a new one
@@ -503,12 +611,11 @@ def get_resnet50(config: Configuration, weights=None):
 
 def createLabelNamesArray(config: Configuration):
     label_names = ["0"]
-    for i in range(1, config.numClasses+1):
+    for i in range(1, config.numClasses + 1):
         label_names.append(str(i))
 
 
 def get_faster_rcnn(config: Configuration, weights=None):
-
     weights_backbone = None
     trainable_backbone_layers = None
 
@@ -519,7 +626,7 @@ def get_faster_rcnn(config: Configuration, weights=None):
         trainable_backbone_layers,
         5, 3)
 
-    #norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
+    # norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
     backbone = get_resnet50(config.numClasses, config.channels)
     # resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
@@ -547,7 +654,6 @@ def get_faster_rcnn(config: Configuration, weights=None):
 
 def createMultichannelModelInstance(config: Configuration,
                                     weights=None):
-
     # load an instance segmentation model pre-trained on COCO
     model = get_faster_rcnn(config, weights)
 
@@ -574,10 +680,24 @@ def createMultichannelModelInstance(config: Configuration,
 def drawImageAndFeatureMasks(config: Configuration,
                              dataset: ImageDataset,
                              imageNumber: int):
-
     image = dataset.getImages(imageNumber)[0]
     mask = dataset.getMask(imageNumber)
-    labels = dataset.getLabelList(imageNumber)
+    labels = dataset.getLabels(imageNumber)
+
+    masks = seperateMasks(mask)
+
+    showMasks(image, masks, labels)
+    showBBoxes(image, masks)
+
+
+def drawTransformedImageAndFeatureMasks(config: Configuration,
+                                        dataset: ImageDataset,
+                                        imageNumber: int):
+    itemTuple = dataset.__getitem__(imageNumber)
+    image = itemTuple[0]
+    mask = itemTuple[1]["masks"]
+    labels = dataset.getLabels(imageNumber)
+
 
     masks = seperateMasks(mask)
 
@@ -588,14 +708,13 @@ def drawImageAndFeatureMasks(config: Configuration,
 def testInference(config: Configuration,
                   dataset: ImageDataset, model,
                   imageNumber: int):
-
     imgs = dataset.getImages(imageNumber)
     for i in range(0, len(imgs)):
         imgs[i] = v2.functional.convert_image_dtype(imgs[i], dtype=torch.float)
         imgs[i] = tv_tensors.Image(imgs[i])
 
     # https://pytorch.org/docs/stable/generated/torch.cat.html
-    img = torch.cat(imgs, 0) 
+    img = torch.cat(imgs, 0)
     eval_transform = createTransforms(train=False)
 
     with torch.no_grad():
@@ -636,31 +755,42 @@ def toNumpy(tensor):
     return tensor.detach().cpu().numpy() if tensor.requires_grad else tensor.cpu().numpy()
 
 
-def exportOnnxModel(config: Configuration, model, alternate_save_path=False):
+def exportOnnxModel(config: Configuration, model):
     device = torch.device('cpu')
     onnx_input = createOnnxInput(config)
     model.to(device)
     model.eval()
 
     # Export the model
-    if not alternate_save_path:
-        torch.onnx.export(model,                 # model being run
-                      onnx_input,                # model input (or a tuple for multiple inputs)
+
+    torch.onnx.export(model,  # model being run
+                      onnx_input,  # model input (or a tuple for multiple inputs)
                       config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
-                      export_params=True,        # store the trained parameter weights inside the model file
-                      opset_version=11,          # the ONNX version to export the model to
+                      export_params=True,  # store the trained parameter weights inside the model file
+                      opset_version=11,  # the ONNX version to export the model to
                       do_constant_folding=True,  # whether to execute constant folding for optimization
-                      input_names = [config.tensorName],   # the model's input names
-                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
-    else:
-        torch.onnx.export(model,                 # model being run
-                      onnx_input,                # model input (or a tuple for multiple inputs)
-                      config.savePath + config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
-                      export_params=True,        # store the trained parameter weights inside the model file
-                      opset_version=11,          # the ONNX version to export the model to
-                      do_constant_folding=True,  # whether to execute constant folding for optimization
-                      input_names = [config.tensorName],   # the model's input names
-                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+                      input_names=[config.tensorName],  # the model's input names
+                      output_names=['boxes', 'labels', 'scores', 'masks'], )  # the model's output names)
+
+#    if not alternate_save_path:
+#        torch.onnx.export(model,                 # model being run
+#                      onnx_input,                # model input (or a tuple for multiple inputs)
+#                      config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+#                      export_params=True,        # store the trained parameter weights inside the model file
+#                      opset_version=11,          # the ONNX version to export the model to
+#                      do_constant_folding=True,  # whether to execute constant folding for optimization
+#                      input_names = [config.tensorName],   # the model's input names
+#                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+#    else:
+#        torch.onnx.export(model,                 # model being run
+#                      onnx_input,                # model input (or a tuple for multiple inputs)
+#                      config.savePath + config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+#                      export_params=True,        # store the trained parameter weights inside the model file
+#                      opset_version=11,          # the ONNX version to export the model to
+#                      do_constant_folding=True,  # whether to execute constant folding for optimization
+#                      input_names = [config.tensorName],   # the model's input names
+#                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+
 
     model.to(config.device)
     model.eval()
@@ -671,7 +801,6 @@ def loadONNX(config: Configuration):
 
 
 def writeONNXMeta(config: Configuration, onnxModel=None):
-
     if onnxModel is None:
         onnxModel = loadONNX(config)
     del onnxModel.metadata_props[:]
@@ -686,7 +815,7 @@ def writeONNXMeta(config: Configuration, onnxModel=None):
     addMeta(onnxModel, "SCORE_THRESHOLD", str(config.scoreThreshold))
     addMeta(onnxModel, "INFERENCE_MODE", str(config.inferenceMode))
     addMeta(onnxModel, "BOX_OVERLAP", "1" if config.bboxOverlap else "0")
-    addMeta(onnxModel, "STRIDE_FRACTION",  str(config.strideFraction))
+    addMeta(onnxModel, "STRIDE_FRACTION", str(config.strideFraction))
     addMeta(onnxModel, "MAX_GT_INSTANCES", str(config.bboxPerImage))
 
     legendNames = ', '.join(e.name for e in config.legendEntries)
@@ -730,7 +859,6 @@ def setDocString(onnxModel, description):
 
 
 def addMeta(onnx_model, key, value):
-
     for entry in onnx_model.metadata_props:
         if entry.key == key:
             entry.value = value
@@ -741,11 +869,11 @@ def addMeta(onnx_model, key, value):
     meta.value = value
 
 
-def saveModel(config: Configuration, model, path: str = None):
+def saveModel(config: Configuration, model, epoch: int = 0, path: str = None):
     if path is None:
         path = config.getPytorchModelFileName()
 
-    torch.save(model.state_dict(), path)
+    torch.save(model.state_dict(), path + "_epoch_" + str(epoch) + ".pt")
 
 
 def loadModel(config: Configuration, model, path: str = None):
