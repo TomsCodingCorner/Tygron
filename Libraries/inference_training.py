@@ -1,4 +1,5 @@
 import os
+
 import logging
 import onnx
 import torch
@@ -16,17 +17,17 @@ import torch.nn as nn
 from torchvision.ops.boxes import masks_to_boxes
 from torchvision.transforms import v2
 from torchvision.utils import draw_segmentation_masks, draw_bounding_boxes
-import libraries.utils as utils
 import datetime
-from libraries.engine import train_one_epoch, evaluate
+import Libraries.utils as utils
+from Libraries.engine import train_one_epoch, evaluate
 
 # from torch.nn import Sequential,ModuleList
 # from torchvision.models.detection import maskrcnn_resnet50_fpn
 # from torchvision.models.detection.rpn import AnchorGenerator
 # from torchvision.ops import misc as misc_nn_ops
 
-logger = logging.getLogger(__name__)
 
+logger = logging.getLogger(__name__)
 
 def initCudaEnvironment(numCudaDevices: int = 1,
                         visibleCudaDevices: str = "0",
@@ -95,6 +96,7 @@ def createTransforms(train: bool):
         #transforms.append(v2.RandomHorizontalFlip(0.5))
         transforms.append(v2.ColorJitter(brightness=0.2, saturation=0.05, contrast=0.1, hue=0.15))
 
+
     transforms.append(v2.ToDtype(torch.float, scale=True))
     transforms.append(v2.ToPureTensor())
     return v2.Compose(transforms)
@@ -137,6 +139,7 @@ class Configuration:
 
         self.version = datetime.date.today().strftime("%Y%m%d")
 
+
     def setModelName(self, modelName: str):
         self._modelName = modelName
 
@@ -145,6 +148,7 @@ class Configuration:
 
     def getOnnxFileName(self):
         return self.savePath + self.getModelName() + ".onnx"
+
 
     def getModelName(self):
         if hasattr(self, '_modelName'):
@@ -246,7 +250,7 @@ class Configuration:
         self.maskThreshold = maskThreshold
         self.strideFraction = strideFraction
 
-
+        
 class ImageDataset(torch.utils.data.Dataset):
     def __init__(self, configuration: Configuration,
                  isTraining: bool = True,
@@ -283,6 +287,7 @@ class ImageDataset(torch.utils.data.Dataset):
 
         return text.split("_")[0]
 
+
     def getImage(self, idx):
         return read_image(self.images[idx], mode=ImageReadMode.RGB)[:3]
 
@@ -314,6 +319,7 @@ class ImageDataset(torch.utils.data.Dataset):
                 maxLabel = max(maxLabel, max(self.getLabels(i)))
         return maxLabel
 
+
     def __getitem__(self, idx):
         # load images and masks
         imgs = self.getImages(idx)
@@ -340,6 +346,7 @@ class ImageDataset(torch.utils.data.Dataset):
         boxes = masks_to_boxes(masks)
 
         labels = self.getLabels(idx)
+
         labels = torch.as_tensor(labels, dtype=torch.int64)
 
         boxArea = (boxes[:, 3] - boxes[:, 1]) * (boxes[:, 2] - boxes[:, 0])
@@ -458,6 +465,7 @@ class ImageDataset(torch.utils.data.Dataset):
 
 
 def listFilesRecursive(path, files=[]):
+
     with os.scandir(path) as entries:
         for entry in entries:
             if entry.is_file():
@@ -491,7 +499,7 @@ def trainModel(config: Configuration,
         elif not trainingDataset.validate():
             logger.warning("Training dataset is invalid, please inspect the logs.")
             return
-
+          
         else:
             trainingDataLoader = torch.utils.data.DataLoader(
                 trainingDataset,
@@ -564,6 +572,7 @@ def createModelInstance(config: Configuration):
                                                                box_detections_per_img=config.bboxPerImage)
 
     logger.info("Detections per image " + str(model.roi_heads.detections_per_img))
+
     # get number of input features for the classifier
     in_features = model.roi_heads.box_predictor.cls_score.in_features
 
@@ -689,6 +698,7 @@ def drawTransformedImageAndFeatureMasks(config: Configuration,
     mask = itemTuple[1]["masks"]
     labels = dataset.getLabels(imageNumber)
 
+
     masks = seperateMasks(mask)
 
     showMasks(image, masks, labels)
@@ -752,6 +762,7 @@ def exportOnnxModel(config: Configuration, model):
     model.eval()
 
     # Export the model
+
     torch.onnx.export(model,  # model being run
                       onnx_input,  # model input (or a tuple for multiple inputs)
                       config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
@@ -760,6 +771,26 @@ def exportOnnxModel(config: Configuration, model):
                       do_constant_folding=True,  # whether to execute constant folding for optimization
                       input_names=[config.tensorName],  # the model's input names
                       output_names=['boxes', 'labels', 'scores', 'masks'], )  # the model's output names)
+
+#    if not alternate_save_path:
+#        torch.onnx.export(model,                 # model being run
+#                      onnx_input,                # model input (or a tuple for multiple inputs)
+#                      config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+#                      export_params=True,        # store the trained parameter weights inside the model file
+#                      opset_version=11,          # the ONNX version to export the model to
+#                      do_constant_folding=True,  # whether to execute constant folding for optimization
+#                      input_names = [config.tensorName],   # the model's input names
+#                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+#    else:
+#        torch.onnx.export(model,                 # model being run
+#                      onnx_input,                # model input (or a tuple for multiple inputs)
+#                      config.savePath + config.getOnnxFileName(),  # where to save the model (can be a file or file-like object)
+#                      export_params=True,        # store the trained parameter weights inside the model file
+#                      opset_version=11,          # the ONNX version to export the model to
+#                      do_constant_folding=True,  # whether to execute constant folding for optimization
+#                      input_names = [config.tensorName],   # the model's input names
+#                      output_names = ['boxes', 'labels','scores','masks'],) # the model's output names)
+
 
     model.to(config.device)
     model.eval()
@@ -847,5 +878,73 @@ def saveModel(config: Configuration, model, epoch: int = 0, path: str = None):
 
 def loadModel(config: Configuration, model, path: str = None):
     if path is None:
-        path = config.getPytorchModelFileName() + ".pt"
+        path = config.getPytorchModelFileName()
     model.load_state_dict(torch.load(path, weights_only=True))
+
+
+def testInferenceWithIoU(config: Configuration,
+                         dataset: ImageDataset,
+                         model,
+                         imageNumber: int):
+    """
+    Evaluate the model's instance segmentation performance on a single image by computing
+    the Intersection over Union (IoU) between predicted masks and ground truth masks.
+
+    Parameters:
+    -----------
+    config : Configuration
+        Configuration object containing parameters such as device (CPU/GPU) and scoreThreshold
+        used to filter predictions.
+    dataset : ImageDataset
+        Dataset object that provides the image and corresponding ground truth annotations
+        (including masks) when indexed.
+    model : torch.nn.Module
+        The trained instance segmentation model to be evaluated. The model should return
+        predictions with masks, boxes, labels, and scores.
+    imageNumber : int
+        Index of the image within the dataset to perform inference and evaluation on.
+
+    Returns:
+    --------
+    List[float]
+        A list of IoU scores, one for each ground truth mask in the image. Each IoU represents
+        the highest overlap between the given ground truth mask and any predicted mask that
+        passes the score threshold.
+
+    Notes:
+    ------
+    - The function sets the model to evaluation mode and disables gradient computation.
+    - Predictions are filtered based on the scoreThreshold defined in the config.
+    - IoU is computed as the ratio of the intersection to the union of the ground truth and
+      predicted masks.
+    - If no predicted mask overlaps with a ground truth mask, the IoU for that mask is 0.0.
+    """
+    # Load image + ground truth
+    img, target = dataset[imageNumber]  # Returns transformed img and target
+    gt_masks = target["masks"]
+
+    model.eval()
+    with torch.no_grad():
+        img = img.to(config.device)
+        prediction = model([img])[0]  # dict with boxes, labels, scores, masks
+
+    # Filter predictions by score threshold
+    score_threshold = config.scoreThreshold
+    keep = prediction["scores"] > score_threshold
+
+    pred_masks = prediction["masks"][keep].squeeze(1).cpu()
+
+    gt_masks = gt_masks.bool().cpu()
+    pred_masks = pred_masks.bool()
+
+    ious = []
+    for gt_mask in gt_masks:
+        best_iou = 0.0
+        for pred_mask in pred_masks:
+            intersection = (gt_mask & pred_mask).sum().item()
+            union = (gt_mask | pred_mask).sum().item()
+            iou = intersection / union if union > 0 else 0.0
+            best_iou = max(best_iou, iou)
+        ious.append(best_iou)  # best IoU for this gt mask
+
+    return ious  # one IoU per gt object
