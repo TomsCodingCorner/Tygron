@@ -9,6 +9,7 @@ PROJECT_ROOT = Path(__file__).resolve().parent
 DATASETS = PROJECT_ROOT / "Datasets"
 TRAIN = DATASETS / "Train_data"
 TEST = DATASETS / "Test_data"
+EVAL = DATASETS / "Eval_data"
 
 COMBO_DATA = DATASETS / "combo_overlay_sets"
 COMBO_TRAIN = COMBO_DATA / "Train"
@@ -31,7 +32,7 @@ YOLO_DATASET_YAML = PROJECT_ROOT / "ModelResearch" / "Yolo" / "dataset_path.yaml
 # Image examples
 YOLO_MASK_EXAMPLE = YOLO_RESEARCH_PATH / "1_image.png"
 YOLO_IMAGE_EXAMPLE = YOLO_RESEARCH_PATH / "1_mask.png"
-
+TRANSFORM_IMAGE_EXAMPLE = PROJECT_ROOT / "TransformTest" / "22_image.png"
 
 # Text files
 YOLO_ANNOTATION_EXAMPLE = YOLO_RESEARCH_PATH / "generated_yolo_annotation.txt"
@@ -39,6 +40,7 @@ YOLO_ANNOTATION_EXAMPLE = YOLO_RESEARCH_PATH / "generated_yolo_annotation.txt"
 
 # Mask-RCNN models
 MODELS_DIR = PROJECT_ROOT / "Models"
+MODEL_PATH = MODELS_DIR / "<insert model name here>"
 
 
 # Yolo subset output creation

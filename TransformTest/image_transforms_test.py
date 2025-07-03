@@ -1,8 +1,8 @@
 from torchvision.transforms import v2
 from PIL import Image
+from paths import TRANSFORM_IMAGE_EXAMPLE
 
-
-orig_img = Image.open("22_image.png")
+orig_img = Image.open(TRANSFORM_IMAGE_EXAMPLE)
 
 brightness = 0.2  # 0 <= brightness <= 1
 saturation = 0.1  # 0 <= saturation <= 1
