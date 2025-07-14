@@ -11,9 +11,6 @@ TRAIN = DATASETS / "Train_data"
 TEST = DATASETS / "Test_data"
 EVAL = DATASETS / "Eval_data"
 
-COMBO_DATA = DATASETS / "combo_overlay_sets"
-COMBO_TRAIN = COMBO_DATA / "Train"
-COMBO_TEST = COMBO_DATA / "Test"
 
 MASKRCNN_RESEARCH_DATASET = PROJECT_ROOT / "ModelResearch" / "OnderzoekDataSubset"
 MASKRCNN_RESEARCH_TRAIN = MASKRCNN_RESEARCH_DATASET / "Train"
