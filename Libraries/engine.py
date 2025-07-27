@@ -83,8 +83,26 @@ def evaluate(model, data_loader, device):
     header = "Test:"
 
     coco = get_coco_api_from_dataset(data_loader.dataset)
+    
+    # Add the missing 'info' field to avoid KeyError
+    if 'info' not in coco.dataset:
+        coco.dataset['info'] = {
+            'description': 'Parking space dataset',
+            'url': '',
+            'version': '1.0',
+            'year': 2025,
+            'contributor': 'Tygron',
+            'date_created': '2025-07-21'
+        }
+    
+    # Add other required fields if missing
+    if 'licenses' not in coco.dataset:
+        coco.dataset['licenses'] = [{'id': 1, 'name': 'Unknown', 'url': ''}]
+    
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
+
+    # Rest of the function remains unchanged...
 
     for images, targets in metric_logger.log_every(data_loader, 100, header):
         images = list(img.to(device) for img in images)

@@ -37,7 +37,6 @@ def initCudaEnvironment(numCudaDevices: int = 1,
     if clearCudaDeviceCount:
         torch.cuda.device_count.cache_clear()
 
-
 def seperateMasks(mask):
     # instances are encoded as different colors
     obj_ids = torch.unique(mask)
@@ -112,9 +111,7 @@ class LegendEntry:
 
 class Configuration:
     def __init__(self):
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
-
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.filePrefix = ""
         self.modelPrefix = "inference"
         self.epochs = 20
@@ -159,8 +156,10 @@ class Configuration:
         return modelname
 
     def setDatasetPaths(self, trainPath: str, testPath: str):
-        self.trainPath = Path(trainPath)
-        self.testPath = Path(testPath)
+        if trainPath is not None:
+            self.trainPath = Path(trainPath)
+        if testPath is not None:
+            self.testPath = Path(testPath)
 
     def getTrainPath(self):
         return self.trainPath
