@@ -556,6 +556,7 @@ def trainModel(config: Configuration,
         lrScheduler.step()
         # evaluate on the test dataset
         evaluate(model, testDataLoader, device=config.device)
+        # save pytorch model 
         if config.saveInterval != 0 and epoch % config.saveInterval == 0:
             saveModel(config, model, epoch=epoch)
 
