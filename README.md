@@ -13,7 +13,7 @@ dat automatisch priveparkeerplaatsen kan herkennen op basis van luchtfoto’s. D
 # Benodigdheden:
 1. Conda 22.10+ of Miniconda (aanbevolen)
 2. Python versie 3.10 of hoger
-3. De juiste packages (Zie installeerguide)
+3. De juiste packages (Zie "Package installatie" hieronder)
 
 # Package installatie
 Check of conda geinstalleerd is door het volgende command te doen, dit zou: "conda 25.3.1" (Of een andere versie) moeten teruggeven:
