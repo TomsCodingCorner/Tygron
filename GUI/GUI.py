@@ -143,9 +143,17 @@ if uploaded_file is not None:
                     
                     
                     # Teken segmentatie maskers
+                    # Voor oppervlaktes: houd totalen bij
+                    total_pixels = int(output_image.shape[1] * output_image.shape[2])
+                    total_area_pixels = 0
+                    per_detection_areas = []
                     if "masks" in pred and len(pred["masks"]) > 0:
                         masks = (pred["masks"] > config.maskThreshold).squeeze(1)
                         output_image = draw_segmentation_masks(output_image, masks, alpha=0.5, colors="blue")
+                        # Bereken oppervlaktes (pixels)
+                        union_mask = masks.any(dim=0)
+                        total_area_pixels = int(union_mask.sum().item())
+                        per_detection_areas = [int(m.sum().item()) for m in masks]
                     
                     # Converteer naar PIL Image voor weergave
                     output_image_pil = Image.fromarray(output_image.permute(1, 2, 0).numpy())
@@ -163,10 +171,38 @@ if uploaded_file is not None:
                         st.write("**Geanalyseerde Afbeelding**")
                         st.image(output_image_pil, use_column_width=True)
                     
-                    # Toon detectie statistieken
+                                        # Toon detectie statistieken
                     num_detections = len(pred["boxes"])
                     st.write(f"**Aantal detecties:** {num_detections}")
-
+    
+                    total_area_pct = (total_area_pixels / total_pixels * 100.0) if total_pixels > 0 else 0.0
+                    st.write(f"**Totaal oppervlak (pixels):** {total_area_pixels:,} ({total_area_pct:.2f}%)")
+                    
+                    # Bereken aantal parkeerplaatsen per detectie
+                    parking_spots_per_detection = []
+                    total_parking_spots = 0
+                    
+                    if per_detection_areas:
+                        for i, area in enumerate(per_detection_areas):
+                            # Minimale afmetingen voor een parkeerplaats: 10x20 = 200 pixels
+                            min_parking_area = 10 * 20
+                            
+                            # Bereken hoeveel parkeerplaatsen er in deze detectie passen
+                            parking_spots = area // min_parking_area
+                            parking_spots_per_detection.append(parking_spots)
+                            total_parking_spots += parking_spots
+                    
+                    st.write(f"**Verwachte aantal parkeerplaatsen:** {total_parking_spots}")
+                    
+                    # Toon parkeerplaatsen per detectie
+                    if per_detection_areas:
+                        df_areas = pd.DataFrame({
+                            "Detectie": list(range(1, len(per_detection_areas) + 1)),
+                            "Oppervlak (px)": [f"{a:,}" for a in per_detection_areas],
+                            "Parkeerplaatsen": parking_spots_per_detection,
+                        })
+                        st.dataframe(df_areas, use_container_width=True)
+                    
                     st.success("Analyse voltooid!")
                     
             except Exception as e:
