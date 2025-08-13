@@ -35,7 +35,7 @@ Check of conda geinstalleerd is door het volgende command te doen, dit zou: "con
 - conda --version
 
 Als dit geintalleerd is, run deze command om een conda enviroment op te zetten:
-- conda create --name tygrongroep3 python=3.13
+- conda create --name tygrongroep3 python=3.10
 
 Open een nieuw terminal en activeer de conda enviroment:
 - conda activate tygrongroep3
