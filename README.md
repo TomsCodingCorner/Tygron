@@ -35,7 +35,7 @@ Check of conda geinstalleerd is door het volgende command te doen, dit zou: "con
 - conda --version
 
 Als dit geintalleerd is, run deze command om een conda enviroment op te zetten:
-- conda create --name tygrongroep3 python=3.13
+- conda create --name tygrongroep3 python=3.10
 
 Open een nieuw terminal en activeer de conda enviroment:
 - conda activate tygrongroep3
@@ -94,6 +94,18 @@ IF(GT(@A, 0), A, -2147483648)
 6. Berekening uitvoeren
 Klik op “Update Now” om de berekening toe te passen.
 
+# Voeg het model toe
+7. Voeg het model toe
+Op je computer, vind het .onnx bestand dat het model is en sleep dit in het tygronplatorm als je onde rhet tabje overlays zit.
+
+ 8. Zet de settings goed
+    1. Druk op Import AI Inference Overlay, hierna zal het model laden en zal recht de configuratie te vinden zijn
+    2. Druk rechts op Configuration Wizard, ga naar "Step 2 Input Tensors", en zet select an input Tensor op: "input_A:RGB_normalized 0:1"
+    3. Onder "Step 3 Input Prequels" zie je "Overlay", zet dit op Combinatie
+    4. Ga naar "Step 4 Output Tensor", zet dit op: "boxes"
+    5. Ga naar "Step 6 Overlays", vind hier aan: "Labels, Scores, Boxes, Masks"
+    6. Druk op Finish om uit de configuration wizard te gaan
+    7. Druk op Update Now rechtsonderin, hierna zal het model de prive parkeerplaatsen detecteren.
 
 
 
