@@ -489,7 +489,8 @@ def trainModel(config: Configuration,
                testDataLoader=None,
                optimizer=None,
                lrSceduler=None,
-               evaluateModel: bool = True):
+               evaluateModel: bool = True,
+               test=False):
     if trainingDataLoader is None:
         if trainingDataset is None:
             logger.warning("Please provide a training dataset or dataset loader")
@@ -550,6 +551,8 @@ def trainModel(config: Configuration,
 
     for epoch in range(config.epochs):
         # train for one epoch, printing every 10 iterations
+        if test:
+            return train_one_epoch(model, optimizer, trainingDataLoader, config.device, epoch, print_freq=10, test=test)
         train_one_epoch(model, optimizer, trainingDataLoader, config.device,
                         epoch, print_freq=10)
         # update the learning rate
