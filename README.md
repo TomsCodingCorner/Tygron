@@ -98,14 +98,3 @@ Op je computer, vind het .onnx bestand dat het model is en sleep dit in het tygr
     5. Ga naar "Step 6 Overlays", vind hier aan: "Labels, Scores, Boxes, Masks"
     6. Druk op Finish om uit de configuration wizard te gaan
     7. Druk op Update Now rechtsonderin, hierna zal het model de prive parkeerplaatsen detecteren.
-
-
-
-
-
-
-
-
-
-
-
