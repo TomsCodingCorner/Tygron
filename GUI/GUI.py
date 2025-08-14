@@ -24,7 +24,7 @@ import pandas as pd
 import tempfile
 import io
 from torchvision.io import read_image, ImageReadMode
-from torchvision.utils import draw_bounding_boxes, draw_segmentation_masks
+from torchvision.utils import draw_segmentation_masks
 from torchvision import tv_tensors
 from torchvision.transforms import v2
 
@@ -52,7 +52,7 @@ models_dir = os.path.join(script_dir, '..', 'Models')
 
 # Configureren van de streamlit
 img = Image.open(logo_path)
-st.set_page_config(layout="wide", page_title="Tygron AI - Object Detectie", page_icon=img)
+st.set_page_config(layout="wide", page_title="Tygron AI - Parkeerplaats detectie", page_icon=img)
 st.image(logo_path, width=175)
 
 st.title("Tygron AI - Object Detectie en Segmentatie")
@@ -63,6 +63,10 @@ st.sidebar.markdown("""**Welkom bij de Tygron AI Object Detectie Tool**
 1. Selecteer een getraind model uit de dropdown
 2. Upload een afbeelding
 3. Klik op 'Analyseer Afbeelding' om de detectie uit te voeren
+                    
+*Over deze tool:*  
+Deze tool gebruikt deep learning modellen om objecten in afbeeldingen te detecteren en segmenteren.
+Het model toont segmentatie maskers over gedetecteerde objecten.
 """)
 
 left, right = st.columns(2)
@@ -133,21 +137,23 @@ if uploaded_file is not None:
                         pred = predictions[0]
                     
                     # Bereid de afbeelding voor visualisatie voor
-                    display_image = image[:3, ...]  # Neem alleen RGB kanalen
-                    display_image = (255.0 * (display_image - display_image.min()) / 
-                                   (display_image.max() - display_image.min())).to(torch.uint8)
+                    output_image = image[:3, ...]  # Neem alleen RGB kanalen
+                    output_image = (255.0 * (output_image - output_image.min()) / 
+                                   (output_image.max() - output_image.min())).to(torch.uint8)
                     
-                    # Maak labels voor detecties
-                    pred_labels = [f"Score: {score:.3f}" for score in pred["scores"]]
-                    pred_boxes = pred["boxes"].long()
-                    
-                    # Teken bounding boxes
-                    output_image = draw_bounding_boxes(display_image, pred_boxes, pred_labels, colors="red")
                     
                     # Teken segmentatie maskers
+                    # Voor oppervlaktes: houd totalen bij
+                    total_pixels = int(output_image.shape[1] * output_image.shape[2])
+                    total_area_pixels = 0
+                    per_detection_areas = []
                     if "masks" in pred and len(pred["masks"]) > 0:
                         masks = (pred["masks"] > config.maskThreshold).squeeze(1)
                         output_image = draw_segmentation_masks(output_image, masks, alpha=0.5, colors="blue")
+                        # Bereken oppervlaktes (pixels)
+                        union_mask = masks.any(dim=0)
+                        total_area_pixels = int(union_mask.sum().item())
+                        per_detection_areas = [int(m.sum().item()) for m in masks]
                     
                     # Converteer naar PIL Image voor weergave
                     output_image_pil = Image.fromarray(output_image.permute(1, 2, 0).numpy())
@@ -165,32 +171,37 @@ if uploaded_file is not None:
                         st.write("**Geanalyseerde Afbeelding**")
                         st.image(output_image_pil, use_column_width=True)
                     
-                    # Toon detectie statistieken
-                    st.subheader("Detectie Statistieken")
+                                        # Toon detectie statistieken
                     num_detections = len(pred["boxes"])
                     st.write(f"**Aantal detecties:** {num_detections}")
+    
+                    total_area_pct = (total_area_pixels / total_pixels * 100.0) if total_pixels > 0 else 0.0
+                    st.write(f"**Totaal oppervlak (pixels):** {total_area_pixels:,} ({total_area_pct:.2f}%)")
                     
-                    if num_detections > 0:
-                        scores = pred["scores"].cpu().numpy()
-                        st.write(f"**Hoogste betrouwbaarheid:** {scores.max():.3f}")
-                        st.write(f"**Gemiddelde betrouwbaarheid:** {scores.mean():.3f}")
-                        
-                        # Toon top detecties in een tabel
-                        if num_detections > 0:
-                            st.write("**Top Detecties:**")
-                            detection_data = []
-                            for i, (box, score) in enumerate(zip(pred["boxes"][:5], pred["scores"][:5])):
-                                detection_data.append({
-                                    "Detectie": i+1,
-                                    "Betrouwbaarheid": f"{score:.3f}",
-                                    "Bounding Box": f"({box[0]:.0f}, {box[1]:.0f}, {box[2]:.0f}, {box[3]:.0f})"
-                                })
+                    # Bereken aantal parkeerplaatsen per detectie
+                    parking_spots_per_detection = []
+                    total_parking_spots = 0
+                    
+                    if per_detection_areas:
+                        for i, area in enumerate(per_detection_areas):
+                            # Minimale afmetingen voor een parkeerplaats: 10x20 = 200 pixels
+                            min_parking_area = 10 * 20
                             
-                            df = pd.DataFrame(detection_data)
-                            st.table(df)
+                            # Bereken hoeveel parkeerplaatsen er in deze detectie passen
+                            parking_spots = area // min_parking_area
+                            parking_spots_per_detection.append(parking_spots)
+                            total_parking_spots += parking_spots
                     
-                    # Opruimen
-                    os.unlink(tmp_file.name)
+                    st.write(f"**Verwachte aantal parkeerplaatsen:** {total_parking_spots}")
+                    
+                    # Toon parkeerplaatsen per detectie
+                    if per_detection_areas:
+                        df_areas = pd.DataFrame({
+                            "Detectie": list(range(1, len(per_detection_areas) + 1)),
+                            "Oppervlak (px)": [f"{a:,}" for a in per_detection_areas],
+                            "Parkeerplaatsen": parking_spots_per_detection,
+                        })
+                        st.dataframe(df_areas, use_container_width=True)
                     
                     st.success("Analyse voltooid!")
                     
@@ -204,4 +215,4 @@ else:
 
 # Footer
 st.markdown("---")
-st.markdown("*Ontwikkeld door het Tygron AI team*")
+st.markdown("*Ontwikkeld door: Elijah, Ties, Tom*")
