@@ -9,11 +9,12 @@ from Libraries.coco_eval import CocoEvaluator
 from Libraries.coco_utils import get_coco_api_from_dataset
 
 
-def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, scaler=None):
+def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, test=False, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value:.6f}"))
     header = f"Epoch: [{epoch}]"
+    test_loss_list = []
 
     lr_scheduler = None
     if epoch == 0:
@@ -36,6 +37,7 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
         losses_reduced = sum(loss for loss in loss_dict_reduced.values())
 
         loss_value = losses_reduced.item()
+        test_loss_list.append(loss_value)
 
         if not math.isfinite(loss_value):
             print(f"Loss is {loss_value}, stopping training")
@@ -57,7 +59,10 @@ def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq, sc
         metric_logger.update(loss=losses_reduced, **loss_dict_reduced)
         metric_logger.update(lr=optimizer.param_groups[0]["lr"])
 
-    return metric_logger
+    if test:
+        return test_loss_list
+    else:
+        return metric_logger
 
 
 def _get_iou_types(model):
@@ -83,8 +88,26 @@ def evaluate(model, data_loader, device):
     header = "Test:"
 
     coco = get_coco_api_from_dataset(data_loader.dataset)
+    
+    # Add the missing 'info' field to avoid KeyError
+    if 'info' not in coco.dataset:
+        coco.dataset['info'] = {
+            'description': 'Parking space dataset',
+            'url': '',
+            'version': '1.0',
+            'year': 2025,
+            'contributor': 'Tygron',
+            'date_created': '2025-07-21'
+        }
+    
+    # Add other required fields if missing
+    if 'licenses' not in coco.dataset:
+        coco.dataset['licenses'] = [{'id': 1, 'name': 'Unknown', 'url': ''}]
+    
     iou_types = _get_iou_types(model)
     coco_evaluator = CocoEvaluator(coco, iou_types)
+
+    # Rest of the function remains unchanged...
 
     for images, targets in metric_logger.log_every(data_loader, 100, header):
         images = list(img.to(device) for img in images)

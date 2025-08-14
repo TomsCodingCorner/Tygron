@@ -37,7 +37,6 @@ def initCudaEnvironment(numCudaDevices: int = 1,
     if clearCudaDeviceCount:
         torch.cuda.device_count.cache_clear()
 
-
 def seperateMasks(mask):
     # instances are encoded as different colors
     obj_ids = torch.unique(mask)
@@ -112,9 +111,7 @@ class LegendEntry:
 
 class Configuration:
     def __init__(self):
-        self.device = torch.device(
-            'cuda' if torch.cuda.is_available() else 'cpu')
-
+        self.device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
         self.filePrefix = ""
         self.modelPrefix = "inference"
         self.epochs = 20
@@ -159,8 +156,10 @@ class Configuration:
         return modelname
 
     def setDatasetPaths(self, trainPath: str, testPath: str):
-        self.trainPath = Path(trainPath)
-        self.testPath = Path(testPath)
+        if trainPath is not None:
+            self.trainPath = Path(trainPath)
+        if testPath is not None:
+            self.testPath = Path(testPath)
 
     def getTrainPath(self):
         return self.trainPath
@@ -490,7 +489,8 @@ def trainModel(config: Configuration,
                testDataLoader=None,
                optimizer=None,
                lrSceduler=None,
-               evaluateModel: bool = True):
+               evaluateModel: bool = True,
+               test=False):
     if trainingDataLoader is None:
         if trainingDataset is None:
             logger.warning("Please provide a training dataset or dataset loader")
@@ -551,12 +551,15 @@ def trainModel(config: Configuration,
 
     for epoch in range(config.epochs):
         # train for one epoch, printing every 10 iterations
+        if test:
+            return train_one_epoch(model, optimizer, trainingDataLoader, config.device, epoch, print_freq=10, test=test)
         train_one_epoch(model, optimizer, trainingDataLoader, config.device,
                         epoch, print_freq=10)
         # update the learning rate
         lrScheduler.step()
         # evaluate on the test dataset
         evaluate(model, testDataLoader, device=config.device)
+        # save pytorch model 
         if config.saveInterval != 0 and epoch % config.saveInterval == 0:
             saveModel(config, model, epoch=epoch)
 

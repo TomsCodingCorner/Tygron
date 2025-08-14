@@ -1,6 +1,5 @@
 from pathlib import Path
 
-
 # PROJECT ROOT: ga uit van de repo root, automatisch gedetecteerd
 PROJECT_ROOT = Path(__file__).resolve().parent
 
@@ -10,10 +9,6 @@ DATASETS = PROJECT_ROOT / "Datasets"
 TRAIN = DATASETS / "Train_data"
 TEST = DATASETS / "Test_data"
 EVAL = DATASETS / "Eval_data"
-
-COMBO_DATA = DATASETS / "combo_overlay_sets"
-COMBO_TRAIN = COMBO_DATA / "Train"
-COMBO_TEST = COMBO_DATA / "Test"
 
 MASKRCNN_RESEARCH_DATASET = PROJECT_ROOT / "ModelResearch" / "OnderzoekDataSubset"
 MASKRCNN_RESEARCH_TRAIN = MASKRCNN_RESEARCH_DATASET / "Train"
@@ -40,7 +35,7 @@ YOLO_ANNOTATION_EXAMPLE = YOLO_RESEARCH_PATH / "generated_yolo_annotation.txt"
 
 # Mask-RCNN models
 MODELS_DIR = PROJECT_ROOT / "Models"
-MODEL_PATH = MODELS_DIR / "<insert model name here>"
+MODEL_PATH = MODELS_DIR / "combo_sets_model.pt"
 
 
 # Yolo subset output creation
