@@ -1,41 +1,100 @@
-#Feature branching Git workflow
-
+![Logo-Tygron](https://github.com/user-attachments/assets/cd238f33-4aa1-4b34-b7c7-a10c54ebae30)
 
 # Tygron
-Groep 3 Tygron DLP door Ties, Tom en Elijah
+Het team van groep 3 bestaat uit:
+- Ties Smid – Scrum Master en contactpersoon voor de Product Owner
+- Tom van der Kruijk – Verantwoordelijk voor backlogbeheer
+- Elijah Hofman – Leiding Back-endontwikkeling
 
-# GitHub Workflow – Tygron Team
+# Inleiding van het project
+Het doel van dit project is het ontwikkelen van een Object Masking AI-model
+dat automatisch priveparkeerplaatsen kan herkennen op basis van luchtfoto’s. Die uiteindelijk gebruikt zou worden door overheidsinstanties die momenteel niet beschikken over betrouwbare data over dergelijke parkeerplaatsen, wat beleidsvorming belemmert.
 
-## Branch Structuur
-- `main` → stabiele productiecode (nooit direct aan werken)
-- `dev` → gezamenlijke ontwikkelbranch 
-- `feature/...` → voor nieuwe functionaliteiten (elke feature heeft zijn eigen branc)
-- `bugfix/...` → voor specifieke fouten.
+# Benodigdheden:
+1. Conda 22.10+ of Miniconda (aanbevolen)
+2. Python versie 3.10 of hoger
+3. De juiste packages (Zie "Package installatie" hieronder)
 
-## Nieuwe branch maken (iedereen MOET dit volgen)
-1. git fetch origin (Pakt alle branches)
-2. git checkout dev (Verlaat de main branch en ga naar de dev branch)
-3. git pull origin dev (Pak de meest recente versie)
-4. git checkout -b feature/NAAM_HIER (Maak nu je eigen branch aan IN de dev branch voor de specifieke feature die je gaat bouwen.)
+# Package installatie
+Check of conda geinstalleerd is door het volgende command te doen, dit zou: "conda 25.3.1" (Of een andere versie) moeten teruggeven:
+- conda --version
 
-## Commit regels
-✅ Wel doen:
-- Commit tekst: Geef een duidelijke beknopte uitleg weat je hebt gedaan binnen die commit
-- Commit met regelmaat!
-- feat: voegt login toe
-- fix: repareert fout bij dataload
-- docs: beschrijft workflow in README
+Als dit geintalleerd is, run deze command om een conda enviroment op te zetten:
+- conda create --name tygrongroep3 python=3.10
 
-## Werkwijze
-- Maak een branch vanaf dev
-- Codeer op je eigen branch als er conflicts kunnen komen door op dezelfde branche te werken
-- Commit & push
-- Maak een Pull Request naar dev
-- Laat je code reviewen
-- Merge na goedkeuring Werkwijze
+Open een nieuw terminal en activeer de conda enviroment:
+- conda activate tygrongroep3
 
-## Voorbeeld pushen
-- git status                      # Check of je op je eigen branch werkt, er moet staan feature/(jouw feature naam) NIET MAIN of DEV. 
-- git add README.md               # Voeg toe wat je wil opslaan
-- git commit -m "docs: beschrijft git workflow in README"
-- git push -u origin feature/update-readme
+Zorg dat je met de terminal in de hoofdpaginafolder zit waar de enviroment.yaml inzit en download de packages uit de yml met:
+- conda env update -n tygrongroep3 --file environment.yaml
+
+# Hoe run ik de proof of concept
+1. Zorg dat je in de hoofdfolder bent binnen je python omgeving.
+2. Doe: "cd GUI" in de terminal, hiermee wordt gezorgd dat je in de goede folder zit
+3. In de terminal, doe: "streamlit run GUI.py", hierna zal in de browser een server starten
+4. Selecteer het gewenste model (Het model komt uit de model subfolder)
+5. Selecteer de afbeelding waar de parkeerplaats op gedetecteerd moet worden.
+
+# Hoe moet de code uitgevoerd worden
+Instructies voor het instellen van de combinatie-overlay in Tygron
+Volg onderstaande stappen om de benodigde combinatie-overlay correct in te stellen in het Tygron-platform:
+
+1. Voorbereiding
+Installeer het Tygron-platform via de officiële handleiding:
+Installatiehandleiding - https://support.tygron.com/wiki/Install
+
+Log in op het platform volgens deze instructies:
+Inloghandleiding - https://support.tygron.com/wiki/Log_in
+
+Maak een nieuw project aan met behulp van de wizard:
+Nieuwe projectwizard - https://support.tygron.com/wiki/New_Project_Wizard
+
+![file-U1jpjUX3pKGi5Lc4J3USBu](https://github.com/user-attachments/assets/4260fb9a-1b0f-4b59-bc24-10db21bc6990)
+
+2. Toevoegen van overlays
+Zodra je project is aangemaakt en je in de 3D-omgeving zit, ga je naar het tabblad "Overlays".
+
+Voeg hier de overlay “Oorspronkelijke Satelliet” toe.
+
+Voeg vervolgens een overlay van het type “Combinatie” toe.
+
+3. Instellingen aanpassen
+Voor beide overlays voer je de volgende instellingen door:
+
+Gridgrootte aanpassen:
+Zet de grid cell size op 0,25 m per pixel (te vinden onder het tabblad General).
+
+![file-V86ysaPx2Qw8f6vfqz6LrZ](https://github.com/user-attachments/assets/84d5c65e-aeb5-4708-afdc-612c7a0b64d0)
+
+4. Combinatie-overlay configureren
+Open de Combinatie-overlay en ga naar het tabblad Input.
+
+Stel onder Grid A de overlay “Oorspronkelijke Satelliet” in.
+
+Klik onderin op “Select more Attributes or Grids” en kies daar het attribuut “Private_Yard” als Attribute A.
+
+![image](https://github.com/user-attachments/assets/bf6cffe8-09b8-4944-a743-96d44d87b624)
+
+5. Formule toevoegen
+Ga naar het tabblad General van de combinatie-overlay.
+
+Voeg onder Formula de volgende formule toe:
+IF(GT(@A, 0), A, -2147483648)
+
+![file-J5S1EUGwNxRGQjSMcAMFh5](https://github.com/user-attachments/assets/12b38b91-aacb-4886-b4a1-17fea07f6723)
+
+6. Berekening uitvoeren
+Klik op “Update Now” om de berekening toe te passen.
+
+# Voeg het model toe
+7. Voeg het model toe
+Op je computer, vind het .onnx bestand dat het model is en sleep dit in het tygronplatorm als je onde rhet tabje overlays zit.
+
+ 8. Zet de settings goed
+    1. Druk op Import AI Inference Overlay, hierna zal het model laden en zal recht de configuratie te vinden zijn
+    2. Druk rechts op Configuration Wizard, ga naar "Step 2 Input Tensors", en zet select an input Tensor op: "input_A:RGB_normalized 0:1"
+    3. Onder "Step 3 Input Prequels" zie je "Overlay", zet dit op Combinatie
+    4. Ga naar "Step 4 Output Tensor", zet dit op: "boxes"
+    5. Ga naar "Step 6 Overlays", vind hier aan: "Labels, Scores, Boxes, Masks"
+    6. Druk op Finish om uit de configuration wizard te gaan
+    7. Druk op Update Now rechtsonderin, hierna zal het model de prive parkeerplaatsen detecteren.
